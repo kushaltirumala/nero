@@ -14,6 +14,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 # Yang
 import cifar
+import models.vgg
 
 def get_network(args):
     """ return given network
@@ -34,8 +35,8 @@ def get_network(args):
         net = vgg16(num_classes=nclass)
     elif args.net == 'vgg19':
         from models.vgg import vgg19
-        net = vgg19(num_classes=nclass) 
-    
+        net = vgg19(num_classes=nclass)
+
     elif args.net == 'resnet18':
         from models.resnet import resnet18
         net = resnet18(num_classes=nclass)
@@ -93,7 +94,7 @@ def get_training_dataloader(mean, std, batch_size=16, num_workers=2, shuffle=Tru
         cifar100_training = cifar.CIFAR100(root='./data', train=True, download=True, transform=transform_train,alpha=alpha)
     elif task == 'cifar10':
         cifar100_training = cifar.CIFAR10(root='./data', train=True, download=True, transform=transform_train,alpha=alpha)
-    
+
     cifar100_training_loader = DataLoader(
         cifar100_training, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size,drop_last=False)
 
@@ -120,7 +121,7 @@ def get_test_dataloader(mean, std, batch_size=16, num_workers=2, shuffle=True,ta
         cifar100_test = torchvision.datasets.CIFAR100(root='./data', train=train, download=True, transform=transform_test)
     elif task == "cifar10":
         cifar100_test = torchvision.datasets.CIFAR10(root='./data', train=train, download=True, transform=transform_test)
-    
+
     cifar100_test_loader = DataLoader(
         cifar100_test, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size)
 
