@@ -139,7 +139,7 @@ if __name__ == '__main__':
     parser.add_argument('--task', default='cifar10' , type=str)
     parser.add_argument('--depth', default=10, type=int)
     parser.add_argument('--width', default=10, type=int)
-    parser.add_argument('--batch_norm', default=True, help="whether or not to include batch norm layers")
+    parser.add_argument('--batch_norm', action='store_true', default=True, help="whether or not to include batch norm layers")
 
     args = parser.parse_args()
 
