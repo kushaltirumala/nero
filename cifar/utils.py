@@ -25,31 +25,31 @@ def get_network(args):
     #Yang added none bn vggs
     if args.net == 'vgg11':
         from models import vgg11
-        net = vgg11(num_classes=nclass)
+        net = vgg11_bn(num_classes=nclass)
     elif args.net == 'vgg13':
-        from models.vgg import vgg13
+        from models import vgg13
         net = vgg13(num_classes=nclass)
     elif args.net == 'vgg16':
-        from models.vgg import vgg16
+        from models import vgg16
         net = vgg16(num_classes=nclass)
     elif args.net == 'vgg19':
-        from models.vgg import vgg19
+        from models import vgg19
         net = vgg19(num_classes=nclass)
 
     elif args.net == 'resnet18':
-        from models.resnet import resnet18
+        from models import resnet18
         net = resnet18(num_classes=nclass)
     elif args.net == 'resnet34':
-        from models.resnet import resnet34
+        from models import resnet34
         net = resnet34(num_classes=nclass)
     elif args.net == 'resnet50':
-        from models.resnet import resnet50
+        from models import resnet50
         net = resnet50(num_classes=nclass)
     elif args.net == 'resnet101':
-        from models.resnet import resnet101
+        from models import resnet101
         net = resnet101(num_classes=nclass)
     elif args.net == 'resnet152':
-        from models.resnet import resnet152
+        from models import resnet152
         net = resnet152(num_classes=nclass)
 
     else:
