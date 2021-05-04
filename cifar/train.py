@@ -32,7 +32,7 @@ import math
 import sys
 sys.path.append('../optim')
 
-from nero import Nero,Nero_abl
+from nero import Nero
 from lamb import Lamb
 from lambcs import LambCS
 from madam import Madam
@@ -81,7 +81,7 @@ def eval_training(dataloader=None, train=False, epoch=None):
     start = time.time()
     net.eval()
 
-    test_loss = 0.0 
+    test_loss = 0.0
     correct = 0.0
 
     for (images, labels) in dataloader:
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-    
+
     net = get_network(args)
 
     #data preprocessing:
@@ -192,11 +192,11 @@ if __name__ == '__main__':
     if args.optimizer == 'sgd':
         print("using sgd!")
         optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.wd)
-    
+
     elif args.optimizer == 'adam':
         print("using adam!")
         optimizer = optim.Adam(net.parameters(), lr=args.lr,betas=(args.momentum, args.beta), weight_decay=args.wd)
-    
+
     elif args.optimizer == 'lamb':
         print("using lamb!")
         optimizer = Lamb(net.parameters(), lr=args.lr,betas=(args.momentum, args.beta), weight_decay=args.wd)
@@ -212,7 +212,7 @@ if __name__ == '__main__':
     elif args.optimizer == 'madamcs':
         print("using madamcs!")
         optimizer = MadamCS(net.parameters(), lr=args.lr,constraints=True)
-   
+
     elif args.optimizer == 'nero':
         print("using nero!")
         optimizer = Nero(net.parameters(),lr=args.lr,constraints=True)
@@ -221,20 +221,20 @@ if __name__ == '__main__':
         print("using nero ablated!")
         optimizer = Nero_abl(net.parameters(),lr=args.lr,
                         c1=args.c1,c2=args.c2)
-    
+
     train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=settings.MILESTONES, gamma=args.gamma) #learning rate decay
     iter_per_epoch = len(cifar_training_loader)
     warmup_scheduler = WarmUpLR(optimizer, iter_per_epoch * args.warm)
 
-    args.prefix = "seed" + str(args.seed) + args.prefix 
-    
+    args.prefix = "seed" + str(args.seed) + args.prefix
+
     if args.optimizer == "sgd":
-        checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.task, args.net, 
+        checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.task, args.net,
                         args.prefix + args.optimizer + str(args.lr)+'_g_'+str(args.gamma)+
                         '_momentum_'+str(args.momentum)+'_wd_'+str(args.wd),
                         settings.TIME_NOW)
     else:
-        checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.task, args.net, 
+        checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.task, args.net,
                         args.prefix + args.optimizer + str(args.lr)+'_g_'+str(args.gamma)+
                         '_beta1_'+str(args.momentum)+'_beta2_'+str(args.beta)+'_wd_'+str(args.wd),
                         settings.TIME_NOW)
@@ -268,7 +268,7 @@ if __name__ == '__main__':
 
     best_test_loss = 10.0
     best_test_loss_epoch = 0
-        
+
     best_train_acc = 0.0
     best_train_acc_epoch = 0
 
@@ -279,7 +279,7 @@ if __name__ == '__main__':
         if epoch > args.warm:
             train_scheduler.step(epoch)
         writer.add_scalar("lr",optimizer.param_groups[0]['lr'],epoch)
-        
+
         train(epoch)
 
         test_acc, test_loss = eval_training(dataloader=cifar_test_loader,train=False,epoch=epoch)
@@ -293,7 +293,7 @@ if __name__ == '__main__':
         if test_loss < best_test_loss:
             best_test_loss = test_loss
             best_test_loss_epoch = epoch
-        
+
         if train_acc > best_train_acc:
             best_train_acc = train_acc
             best_train_acc_epoch = epoch
