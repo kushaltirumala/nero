@@ -14,7 +14,6 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 # Yang
 import cifar
-import models.vgg
 
 def get_network(args):
     """ return given network
@@ -25,7 +24,7 @@ def get_network(args):
         nclass = 100
     #Yang added none bn vggs
     if args.net == 'vgg11':
-        from models.vgg import vgg11
+        from models import vgg11
         net = vgg11(num_classes=nclass)
     elif args.net == 'vgg13':
         from models.vgg import vgg13
