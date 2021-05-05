@@ -234,12 +234,14 @@ if __name__ == '__main__':
     if args.optimizer == "sgd":
         checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.task, args.net,
                         args.prefix + args.optimizer + str(args.lr)+'_g_'+str(args.gamma)+
-                        '_momentum_'+str(args.momentum)+'_wd_'+str(args.wd),
+                        '_momentum_'+str(args.momentum)+'_wd_'+str(args.wd) +
+                        '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
                         settings.TIME_NOW)
     else:
         checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.task, args.net,
                         args.prefix + args.optimizer + str(args.lr)+'_g_'+str(args.gamma)+
-                        '_beta1_'+str(args.momentum)+'_beta2_'+str(args.beta)+'_wd_'+str(args.wd),
+                        '_beta1_'+str(args.momentum)+'_beta2_'+str(args.beta)+'_wd_'+str(args.wd) +
+                        '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
                         settings.TIME_NOW)
 
     #use tensorboard
@@ -249,13 +251,15 @@ if __name__ == '__main__':
         writer = SummaryWriter(log_dir=os.path.join(
                             settings.LOG_DIR, args.task, args.net,
                             args.prefix + args.optimizer + str(args.lr)+'_g_'+str(args.gamma)+
-                            '_momentum_'+str(args.momentum)+'_wd_'+str(args.wd),
+                            '_momentum_'+str(args.momentum)+'_wd_'+str(args.wd) +
+                            '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
                             settings.TIME_NOW))
     else:
         writer = SummaryWriter(log_dir=os.path.join(
                             settings.LOG_DIR, args.task, args.net,
                             args.prefix + args.optimizer + str(args.lr)+'g'+str(args.gamma)+
-                            '_beta1_'+str(args.momentum)+'_beta2_'+str(args.beta)+'_wd_'+str(args.wd),
+                            '_beta1_'+str(args.momentum)+'_beta2_'+str(args.beta)+'_wd_'+str(args.wd) +
+                            '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
                             settings.TIME_NOW))
     input_tensor = torch.Tensor(1, 3, 32, 32).cuda()
     writer.add_graph(net, input_tensor)
