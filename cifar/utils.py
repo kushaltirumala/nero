@@ -14,9 +14,9 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 # Yang
 import cifar
-from models import vgg11, vgg13, vgg16, vgg19, resnet18, resnet34, resnet50, resnet101, resnet152, vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
+from models import vgg11, vgg13, vgg16, vgg19, resnet18, resnet34, resnet50, resnet101, resnet152, vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn, resnet
 
-def get_network(args):
+def get_network(args, depth=10, width=10):
     """ return given network
     """
     if args.task == 'cifar10':
@@ -45,16 +45,16 @@ def get_network(args):
         else:
             net = vgg19(num_classes=nclass)
 
-    elif args.net == 'resnet18':
-        net = resnet18(num_classes=nclass)
-    elif args.net == 'resnet34':
-        net = resnet34(num_classes=nclass)
-    elif args.net == 'resnet50':
-        net = resnet50(num_classes=nclass)
-    elif args.net == 'resnet101':
-        net = resnet101(num_classes=nclass)
-    elif args.net == 'resnet152':
-        net = resnet152(num_classes=nclass)
+    elif args.net == 'resnet':
+        net = resnet(num_classes=nclass, depth=depth, width=width)
+    # elif args.net == 'resnet34':
+    #     net = resnet34(num_classes=nclass)
+    # elif args.net == 'resnet50':
+    #     net = resnet50(num_classes=nclass)
+    # elif args.net == 'resnet101':
+    #     net = resnet101(num_classes=nclass)
+    # elif args.net == 'resnet152':
+    #     net = resnet152(num_classes=nclass)
 
     else:
         print('the network name you have entered is not supported yet')

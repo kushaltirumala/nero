@@ -148,7 +148,7 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
-    net = get_network(args)
+    net = get_network(args, depth=args.depth, width=args.width)
 
     #data preprocessing:
     if args.task == "cifar100":
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     #create checkpoint folder to save model
     if not os.path.exists(checkpoint_path):
         os.makedirs(checkpoint_path)
-    checkpoint_path = os.path.join(checkpoint_path, '{net}-{epoch}-{type}.pth')
+    checkpoint_path = os.path.join(checkpoint_path, '{net}-{epoch}-{type}-{depth}-{width}-{optchoice}.pth')
 
     best_acc = 0.0
     best_test_acc = 0.0
@@ -313,11 +313,19 @@ if __name__ == '__main__':
 
 
         if epoch > settings.MILESTONES[1] and best_acc < test_acc:
-            torch.save(net.state_dict(), checkpoint_path.format(net=args.net, epoch=epoch, type='best'))
+            torch.save({
+                'model_state_dict': net.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                }, checkpoint_path.format(net=args.net, epoch=epoch, type='best', depth=depth, width=width, optchoice=args.optimizer))
+            # torch.save(net.state_dict(), checkpoint_path.format(net=args.net, epoch=epoch, type='best'))
             best_acc = test_acc
             continue
 
         if not epoch % settings.SAVE_EPOCH:
-            torch.save(net.state_dict(), checkpoint_path.format(net=args.net, epoch=epoch, type='regular'))
+            torch.save({
+                'model_state_dict': net.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                }, checkpoint_path.format(net=args.net, epoch=epoch, type='regular', depth=depth, width=width, optchoice=args.optimizer))
+            # torch.save(net.state_dict(), checkpoint_path.format(net=args.net, epoch=epoch, type='regular'))
 
     writer.close()
