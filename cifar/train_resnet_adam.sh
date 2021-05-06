@@ -3,11 +3,11 @@
 #
 
 
-for depth in 42 34 26 18 10
+for depth in 50 42 34 26 18 10
 do
   for width in 16 32 64 128
   do
     echo "ON DEPTH $depth and WIDTH $width \n"
-    env CUDA_VISIBLE_DEVICES=1 python train.py --gpu --batch_norm --task cifar10 --net resnet --depth $depth --width $width --optimizer adam --momentum 0.0 --beta 0.999 --wd 0.0 --seed 0  --lr 0.01
+    env CUDA_VISIBLE_DEVICES=1 python train.py --gpu --batch_norm --task cifar10 --net resnet --depth $depth --width $width --optimizer adam --momentum 0.0 --beta 0.999 --wd 0.0 --seed 0  --lr 0.001 --warm 0 
   done
 done
