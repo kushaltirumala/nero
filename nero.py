@@ -20,6 +20,7 @@ def neuron_mean(x):
 class Nero(Optimizer):
 
     def __init__(self, params, lr=0.01, beta=0.999, constraints=True):
+        import pdb; pdb.set_trace()
         self.beta = beta
         self.constraints = constraints
         defaults = dict(lr=lr)
@@ -43,6 +44,7 @@ class Nero(Optimizer):
             closure (callable, optional): A closure that reevaluates the model
                 and returns the loss.
         """
+
         loss = None
         if closure is not None:
             loss = closure()
@@ -59,7 +61,7 @@ class Nero(Optimizer):
 
                 grad_normed = p.grad / (state['exp_avg_sq']/bias_correction).sqrt()
                 grad_normed[torch.isnan(grad_normed)] = 0
-                
+
                 p.data -= group['lr'] * state['scale'] * grad_normed
 
                 if self.constraints and p.dim() > 1:

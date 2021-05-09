@@ -26,7 +26,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from conf import settings
-from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR
+from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR, get_training_dataloader_mnist, get_test_dataloader_mnist
 
 import math
 import sys
@@ -50,6 +50,7 @@ def train(epoch):
         if args.gpu:
             labels = labels.cuda()
             images = images.cuda()
+
 
         optimizer.zero_grad()
         outputs = net(images)
@@ -151,78 +152,114 @@ if __name__ == '__main__':
     net = get_network(args, depth=args.depth, width=args.width)
 
     #data preprocessing:
-    if args.task == "cifar100":
-        mean = settings.CIFAR100_TRAIN_MEAN
-        std = settings.CIFAR100_TRAIN_STD
-    elif args.task == "cifar10":
-        mean = (0.4914, 0.4822, 0.4465)
-        std = (0.2023, 0.1994, 0.2010)
-    else:
-        print("invalid task!!")
+    if "cifar" in args.task:
+        if args.task == "cifar100":
+            mean = settings.CIFAR100_TRAIN_MEAN
+            std = settings.CIFAR100_TRAIN_STD
+        elif args.task == "cifar10":
+            mean = (0.4914, 0.4822, 0.4465)
+            std = (0.2023, 0.1994, 0.2010)
+        else:
+            print("invalid task!!")
 
-    cifar_training_loader = get_training_dataloader(
-        mean,
-        std,
-        num_workers=4,
-        batch_size=args.b,
-        shuffle=True,
-        alpha = 0.0,
-        task = args.task,
-        da = True
-    )
+        cifar_training_loader = get_training_dataloader(
+            mean,
+            std,
+            num_workers=4,
+            batch_size=args.b,
+            shuffle=True,
+            alpha = 0.0,
+            task = args.task,
+            da = True
+        )
 
-    cifar_test_loader = get_test_dataloader(
-        mean,
-        std,
-        num_workers=4,
-        batch_size=args.b,
-        shuffle=False,
-        task = args.task
-    )
-    #test training acc
-    cifar_train_test_loader = get_test_dataloader(
-        mean,
-        std,
-        num_workers=4,
-        batch_size=args.b,
-        shuffle=False,
-        task = args.task,
-        train = True
-    )
+        cifar_test_loader = get_test_dataloader(
+            mean,
+            std,
+            num_workers=4,
+            batch_size=args.b,
+            shuffle=False,
+            task = args.task
+        )
+        #test training acc
+        cifar_train_test_loader = get_test_dataloader(
+            mean,
+            std,
+            num_workers=4,
+            batch_size=args.b,
+            shuffle=False,
+            task = args.task,
+            train = True
+        )
+    elif "mnist" in args.task:
+        cifar_training_loader = get_training_dataloader_mnist(
+            num_workers=4,
+            batch_size=args.b,
+            shuffle=True,
+            alpha = 0.0,
+            task = args.task,
+        )
+
+        cifar_test_loader = get_test_dataloader_mnist(
+            num_workers=4,
+            batch_size=args.b,
+            shuffle=False,
+            task = args.task
+        )
+        #test training acc
+        cifar_train_test_loader = get_test_dataloader_mnist(
+            num_workers=4,
+            batch_size=args.b,
+            shuffle=False,
+            task = args.task,
+            train = True
+        )
 
     loss_function = nn.CrossEntropyLoss()
 
+    params = list(net.named_parameters())
+
+
+    def is_gain_parameter(n): return 'bn' in n and 'weight' in n
+
+    grouped_parameters = [
+        {"params": [p for n, p in params if is_gain_parameter(n)], 'lr': args.lr * 100},
+        {"params": [p for n, p in params if not is_gain_parameter(n)], 'lr': args.lr},
+    ]
+
+    model_parameters_to_train = grouped_parameters
+
     if args.optimizer == 'sgd':
         print("using sgd!")
-        optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.wd)
+        optimizer = optim.SGD(model_parameters_to_train, lr=args.lr, momentum=args.momentum, weight_decay=args.wd)
 
     elif args.optimizer == 'adam':
         print("using adam!")
-        optimizer = optim.Adam(net.parameters(), lr=args.lr,betas=(args.momentum, args.beta), weight_decay=args.wd)
+        optimizer = optim.Adam(model_parameters_to_train, lr=args.lr,betas=(args.momentum, args.beta), weight_decay=args.wd)
 
     elif args.optimizer == 'lamb':
         print("using lamb!")
-        optimizer = Lamb(net.parameters(), lr=args.lr,betas=(args.momentum, args.beta), weight_decay=args.wd)
+        optimizer = Lamb(model_parameters_to_train, lr=args.lr,betas=(args.momentum, args.beta), weight_decay=args.wd)
     elif args.optimizer == 'lambcs':
         print("using lambcs!")
-        optimizer = LambCS(net.parameters(), lr=args.lr,betas=(args.momentum, args.beta), weight_decay=args.wd,
+        optimizer = LambCS(model_parameters_to_train, lr=args.lr,betas=(args.momentum, args.beta), weight_decay=args.wd,
                             constraints=True)
 
     elif args.optimizer == 'madam':
         print("using madam!")
-        optimizer = Madam(net.parameters(), lr=args.lr)
+        optimizer = Madam(model_parameters_to_train, lr=args.lr)
 
     elif args.optimizer == 'madamcs':
         print("using madamcs!")
-        optimizer = MadamCS(net.parameters(), lr=args.lr,constraints=True)
+        optimizer = MadamCS(model_parameters_to_train, lr=args.lr,constraints=True)
 
     elif args.optimizer == 'nero':
         print("using nero!")
-        optimizer = Nero(net.parameters(),lr=args.lr,constraints=True)
+        optimizer = Nero(model_parameters_to_train,lr=args.lr,constraints=True)
 
     elif args.optimizer == 'neroabl':
         print("using nero ablated!")
-        optimizer = Nero_abl(net.parameters(),lr=args.lr,
+        optimizer = Nero_abl(model_parameters_to_train,lr=args.lr,
                         c1=args.c1,c2=args.c2)
 
     train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=settings.MILESTONES, gamma=args.gamma) #learning rate decay
@@ -261,7 +298,16 @@ if __name__ == '__main__':
                             '_beta1_'+str(args.momentum)+'_beta2_'+str(args.beta)+'_wd_'+str(args.wd) +
                             '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
                             settings.TIME_NOW))
-    input_tensor = torch.Tensor(1, 3, 32, 32).cuda()
+
+    if "cifar" in args.task:
+        input_tensor = torch.Tensor(1, 3, 32, 32)
+    elif "mnist" in args.task:
+        input_tensor = torch.Tensor(1, 1, 28, 28)
+    else:
+        print("invalid args.task")
+
+    if args.gpu:
+        input_tensor = input_tensor.cuda()
     writer.add_graph(net, input_tensor)
 
     #create checkpoint folder to save model

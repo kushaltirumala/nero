@@ -13,174 +13,172 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
-class ResBlockv2(nn.Module):
 
+
+class BasicBlock(nn.Module):
+    """Basic Block for resnet 18 and resnet 34
+
+    """
     expansion = 1
 
-    def __init__(self, in_channels, out_channels, stride=1,
-                 affine=True,bn_flag=True, nl_flag=True, pr_flag=False,
-                 bias_flag=False,res_flag=True,scale=1.0,momentum=0.1,
-                 init_flag=True,beta=1.0):
+    def __init__(self, in_channels, out_channels, stride=1, affine=True,bn=True,bias=False,res=True,scale=1.0,momentum=0.1):
         super().__init__()
-        bias = bias_flag
         self.scale = scale
-        self.res_flag = res_flag
-        self.pr_flag = pr_flag
-        self.bn_flag = bn_flag
-        self.nl_flag = nl_flag
-        self.init_flag = init_flag
-        self.beta = 1.0 #beta
+        self.bn = bn
+        self.res = res
+        print('non linearity scale: {}'.format(scale))
 
-        if self.nl_flag:
-            self.nl = nn.ReLU(inplace=False)
+        self.conv1 = nn.Sequential()
+        self.conv1.add_module('conv',nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=bias))
 
-        if self.bn_flag:
-            self.bn1 = nn.BatchNorm2d(in_channels, affine=affine,momentum=momentum)
-            self.bn2 = nn.BatchNorm2d(out_channels, affine=affine,momentum=momentum)
+        self.conv2 = nn.Sequential()
+        self.conv2.add_module('conv',nn.Conv2d(out_channels, out_channels * BasicBlock.expansion, kernel_size=3, padding=1, bias=bias))
 
-        self.conv1 = nn.Conv2d(in_channels, out_channels,kernel_size=3, padding=1, stride=stride,bias=bias)
-        self.conv2 = nn.Conv2d(out_channels,out_channels,kernel_size=3, padding=1, stride=1,bias=bias)
+        if self.bn:
+            self.conv1.add_module('bn',nn.BatchNorm2d(out_channels, affine=affine,momentum=momentum))
+            self.conv2.add_module('bn',nn.BatchNorm2d(out_channels * BasicBlock.expansion, affine=affine,momentum=momentum))
 
-        if self.init_flag:
-            print('custom init')
-            self.conv1.weight.data -= neuron_mean(self.conv1.weight.data)
-            self.conv1.weight.data /= neuron_norm(self.conv1.weight.data)
-            self.conv1.weight.data *= math.sqrt(2/(1-1/math.pi))
-            self.conv2.weight.data -= neuron_mean(self.conv2.weight.data)
-            self.conv2.weight.data /= neuron_norm(self.conv2.weight.data)
-            self.conv2.weight.data *= math.sqrt(2/(1-1/math.pi))
+        self.shortcut = nn.Sequential()
 
-        self.identity = nn.Sequential()
-        if stride != 1 or in_channels != out_channels:
-            self.identity = nn.Conv2d(in_channels, out_channels, 1, stride=stride)
-            if self.init_flag:
-                self.identity.weight.data -= neuron_mean(self.identity.weight.data)
-                self.identity.weight.data /= neuron_norm(self.identity.weight.data)
-                self.identity.weight.data *= math.sqrt(2/(1-1/math.pi))
+        if stride != 1 or in_channels != BasicBlock.expansion * out_channels:
+            self.shortcut.add_module('conv',nn.Conv2d(in_channels, out_channels * BasicBlock.expansion, kernel_size=1, stride=stride, bias=bias))
+            if self.bn:
+                self.shortcut.add_module('bn',nn.BatchNorm2d(out_channels * BasicBlock.expansion, affine=affine,momentum=momentum))
 
     def forward(self, x):
-        #x = x/self.beta
-        if self.res_flag:
-            identity = self.identity(x)
-            if self.pr_flag:
-                print('idendity: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(identity.shape, float(torch.mean(torch.mean(identity,dim=(0,2,3)))), float(torch.mean(torch.std(identity,dim=(0,2,3)))) ) )
-        if self.bn_flag:
-            x = self.bn1(x)
-            if self.pr_flag:
-                print('bn1 out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=(0,2,3)))), float(torch.mean(torch.std(x,dim=(0,2,3)))) ) )
-            x = self.nl(x)
-            x = self.conv1(x)
-            if self.pr_flag:
-                print('conv1 out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=(0,2,3)))), float(torch.mean(torch.std(x,dim=(0,2,3)))) ) )
-            x = self.bn2(x)
-            if self.pr_flag:
-                print('bn2 out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=(0,2,3)))), float(torch.mean(torch.std(x,dim=(0,2,3)))) ) )
-            x = self.nl(x)
-            x = self.conv2(x)
-            if self.pr_flag:
-                print('conv2 out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=(0,2,3)))), float(torch.mean(torch.std(x,dim=(0,2,3)))) ) )
+        if self.res:
+            residual = self.shortcut(x)
+            output = self.conv1(x)
+            output = nn.ReLU(inplace=True)(output * self.scale)
+            output = self.conv2(output)
+            output = nn.ReLU(inplace=True)(output + residual)
+            return output
         else:
-            x = self.nl(x)
-            x = self.conv1(x)
-            if self.pr_flag:
-                print('conv1 out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=(0,2,3)))), float(torch.mean(torch.std(x,dim=(0,2,3)))) ) )
-            x = self.nl(x)
-            x = self.conv2(x)
-            if self.pr_flag:
-                print('conv2 out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=(0,2,3)))), float(torch.mean(torch.std(x,dim=(0,2,3)))) ) )
+            output = self.conv1(x)
+            output = nn.ReLU(inplace=True)(output * self.scale)
+            output = self.conv2(output)
+            output = nn.ReLU(inplace=True)(output * self.scale)
+            return output
 
-        if self.res_flag:
-            x = identity + x
+class BottleNeck(nn.Module):
+    """Residual block for resnet over 50 layers
 
-        if self.pr_flag:
-            print('block out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=(0,2,3)))), float(torch.mean(torch.std(x,dim=(0,2,3)))) ) )
-        return x
+    """
+    expansion = 4
+    def __init__(self, in_channels, out_channels, stride=1, affine=True,bn=True,bias=False,res=True,scale=1.0,momentum=0.1):
+        super().__init__()
+        self.scale = scale
+        self.bn = bn
+        self.res = res
 
+        self.conv1 = nn.Sequential()
+        self.conv1.add_module('conv',nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=bias))
+
+        self.conv2 = nn.Sequential()
+        self.conv2.add_module('conv',nn.Conv2d(out_channels, out_channels, stride=stride, kernel_size=3, padding=1, bias=bias))
+
+        self.conv3 = nn.Sequential()
+        self.conv3.add_module('conv',nn.Conv2d(out_channels, out_channels * BottleNeck.expansion, kernel_size=1, bias=bias))
+
+        if self.bn:
+            self.conv1.add_module('bn',nn.BatchNorm2d(out_channels, affine=affine,momentum=momentum))
+            self.conv2.add_module('bn',nn.BatchNorm2d(out_channels, affine=affine,momentum=momentum))
+            self.conv3.add_module('bn',nn.BatchNorm2d(out_channels * BottleNeck.expansion, affine=affine,momentum=momentum))
+
+        self.shortcut = nn.Sequential()
+
+        if stride != 1 or in_channels != out_channels * BottleNeck.expansion:
+            self.shortcut = nn.Sequential()
+            self.shortcut.add_module('conv',nn.Conv2d(in_channels, out_channels * BottleNeck.expansion, stride=stride, kernel_size=1, bias=bias))
+            if self.bn:
+                self.shortcut.add_module('bn',nn.BatchNorm2d(out_channels * BottleNeck.expansion, affine=affine,momentum=momentum))
+
+    def forward(self, x):
+        if self.res:
+            residual = self.shortcut(x)
+            output = self.conv1(x)
+            output = nn.ReLU(inplace=True)(output * self.scale)
+            output = self.conv2(output)
+            output = nn.ReLU(inplace=True)(output * self.scale)
+            output = self.conv3(output)
+            output = nn.ReLU(inplace=True)(output + residual)
+            return output
+        else:
+            output = self.conv1(x)
+            output = nn.ReLU(inplace=True)(output * self.scale)
+            output = self.conv2(output)
+            output = nn.ReLU(inplace=True)(output * self.scale)
+            output = self.conv3(output)
+            output = nn.ReLU(inplace=True)(output * self.scale)
+            return output
+
+def SRELU(x):
+    return F.ReLU(x*1.4142)
 
 class ResNet(nn.Module):
-    def __init__(self, block=ResBlockv2, width=64, depth=10,
-                 bn_flag=True, bias_flag=True, pr_flag=False,
-                 res_flag=True, init_flag=False,
-                 num_classes=10):
+
+    def __init__(self, block, num_block, num_classes=100,affine=True,bn=True,bias=False,nl=nn.ReLU):
         super().__init__()
-        assert (depth - 2) % 8 == 0 and (depth - 2) // 8 > 0
-        num_block = (depth - 2) // 8
-        self.pr_flag = pr_flag
-        self.bias_flag = bias_flag
-        self.init_flag = init_flag
-        self.input_channels = width
-        self.exp_var = 1.0
-        self.conv0 = nn.Conv2d(3, int(width), 3, padding=1)
+        zero_init_residual=False
+        momentum = 0.1
+        scale = 1.0
+        res = True
+        affine = True
+        bn = True
+        bias = False
 
-        self.stage1 = self._make_layers(block, num_block, int(width),  1,
-                                        bn_flag, res_flag, pr_flag, init_flag,bias_flag)
-        self.stage2 = self._make_layers(block, num_block, int(width*2), 2,
-                                        bn_flag, res_flag, pr_flag, init_flag,bias_flag)
-        self.stage3 = self._make_layers(block, num_block, int(width*4), 2,
-                                        bn_flag, res_flag, pr_flag, init_flag,bias_flag)
-        self.stage4 = self._make_layers(block, num_block, int(width*8), 2,
-                                        bn_flag, res_flag, pr_flag, init_flag,bias_flag)
+        self.in_channels = 64
+        self.conv1 = nn.Sequential()
+        self.conv1.add_module('conv', nn.Conv2d(1, 64, kernel_size=3, padding=1, bias=bias))
+        if bn:
+            self.conv1.add_module('bn',nn.BatchNorm2d(64, affine=affine))
 
-        self.linear = nn.Linear(self.input_channels, num_classes)
-        if self.init_flag:
-            print('body custom init!')
-            self.conv0.weight.data -= neuron_mean(self.conv0.weight.data)
-            self.conv0.weight.data /= neuron_norm(self.conv0.weight.data)
-            self.conv0.weight.data *= math.sqrt(2/(1-1/math.pi))
-            self.linear.weight.data -= neuron_mean(self.linear.weight.data)
-            self.linear.weight.data /= neuron_norm(self.linear.weight.data)
+        self.conv2_x = self._make_layer(block, 64, num_block[0], 1, affine=affine,bn=bn,bias=bias,res=res,scale=scale,momentum=momentum)
+        self.conv3_x = self._make_layer(block, 128, num_block[1], 2, affine=affine,bn=bn,bias=bias,res=res,scale=scale,momentum=momentum)
+        self.conv4_x = self._make_layer(block, 256, num_block[2], 2, affine=affine,bn=bn,bias=bias,res=res,scale=scale,momentum=momentum)
+        self.conv5_x = self._make_layer(block, 512, num_block[3], 2, affine=affine,bn=bn,bias=bias,res=res,scale=scale,momentum=momentum)
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(512 * block.expansion, num_classes,bias=True)
 
-    def _make_layers(self, block, block_num, out_channels, stride,
-                     bn_flag,res_flag,pr_flag,init_flag,bias_flag):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)) and affine:
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+        # Zero-initialize the last BN in each residual branch,
+        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
+        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
+        if zero_init_residual:
+            for m in self.modules():
+                if isinstance(m, Bottleneck):
+                    if res and bn and affine:
+                        nn.init.constant_(m.bn3.weight, 0)
+                elif isinstance(m, BasicBlock):
+                    if res and bn and affine:
+                        nn.init.constant_(m.bn2.weight, 0)
+
+    def _make_layer(self, block, out_channels, num_blocks, stride, affine=True,bn=True,bias=True,res=True,scale=1.0,momentum=0.1):
+
+        strides = [stride] + [1] * (num_blocks - 1)
         layers = []
-        #self.exp_var = 1.0
-        beta = self.exp_var ** 0.5
-        layers.append(block(in_channels=self.input_channels,
-                            out_channels=out_channels,
-                            stride=stride,
-                            bn_flag=bn_flag,
-                            res_flag=res_flag,
-                            pr_flag=pr_flag,
-                            beta=beta,
-                            init_flag=init_flag,
-                            bias_flag=bias_flag))
-        self.input_channels = out_channels * block.expansion
-        self.exp_var += 1
+        for stride in strides:
+            layers.append(block(self.in_channels, out_channels, stride, affine=affine,bn=bn,bias=bias,res=res,scale=scale,momentum=momentum))
+            self.in_channels = out_channels * block.expansion
 
-        while block_num - 1:
-            beta = self.exp_var ** 0.5
-            # print(beta)
-            layers.append(block(in_channels=self.input_channels,
-                            out_channels=out_channels,
-                            stride=1,
-                            bn_flag=bn_flag,
-                            res_flag=res_flag,
-                            pr_flag=pr_flag,
-                            beta=beta,
-                            init_flag=init_flag,
-                            bias_flag=bias_flag))
-            self.input_channels = out_channels * block.expansion
-            block_num -= 1
-            self.exp_var += 1
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv0(x)
-        if self.pr_flag:
-            print('stem out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=(0,2,3)))), float(torch.mean(torch.std(x,dim=(0,2,3)))) ) )
-        x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.stage3(x)
-        x = self.stage4(x)
-        #print(x.shape)
-        x = F.adaptive_avg_pool2d(x, 1) * math.sqrt(16)
-        if self.pr_flag:
-            print('pool out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=0))), float(torch.mean(torch.std(x,dim=0))) ) )
-        x = x.view(x.size(0), -1)
-        x = self.linear(x)
-        if self.pr_flag:
-            print('linear out: chn #: {}, mean: {:0.3f}, std: {:0.3f}\n'.format(x.shape, float(torch.mean(torch.mean(x,dim=0))), float(torch.mean(torch.std(x,dim=0))) ) )
-        return x
+        output = self.conv1(x)
+        output = self.conv2_x(output)
+        output = self.conv3_x(output)
+        output = self.conv4_x(output)
+        output = self.conv5_x(output)
+        output = self.avg_pool(output)
+        output = output.view(output.size(0), -1)
+        output = self.fc(output)
+        return output
 
 def resnet18(num_classes=100):
     """ return a ResNet 18 object
@@ -207,18 +205,21 @@ def resnet152(num_classes=100):
     """
     return ResNet(BottleNeck, [3, 8, 36, 3])
 
-def resnet(num_classes=100, depth=10, width=64):
-    return ResNet(
-            block=ResBlockv2,
-            width=width,
-            depth=depth,
-            bn_flag=True,
-            bias_flag=True,
-            pr_flag=False,
-            res_flag=True,
-            init_flag=False,
-            num_classes=num_classes
-        )
+
+
+
+# def resnet(num_classes=100, depth=10, width=64):
+#     return ResNetYang(
+#             block=ResBlockv2,
+#             width=width,
+#             depth=depth,
+#             bn_flag=True,
+#             bias_flag=True,
+#             pr_flag=False,
+#             res_flag=True,
+#             init_flag=False,
+#             num_classes=num_classes
+#         )
 
 
 """vgg in pytorch

@@ -12,9 +12,11 @@ from torch.optim.lr_scheduler import _LRScheduler
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+from torchvision import datasets
+
 # Yang
 import cifar
-from models import vgg11, vgg13, vgg16, vgg19, resnet18, resnet34, resnet50, resnet101, resnet152, vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn, resnet
+from models import vgg11, vgg13, vgg16, vgg19, resnet18, resnet34, resnet50, resnet101, resnet152, vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 
 def get_network(args, depth=10, width=10):
     """ return given network
@@ -23,6 +25,8 @@ def get_network(args, depth=10, width=10):
         nclass = 10
     elif args.task == 'cifar100':
         nclass = 100
+    elif args.task == 'mnist':
+        nclass = 10
     #Yang added none bn vggs
     if args.net == 'vgg11':
         if args.batch_norm:
@@ -47,14 +51,16 @@ def get_network(args, depth=10, width=10):
 
     elif args.net == 'resnet':
         net = resnet(num_classes=nclass, depth=depth, width=width)
-    # elif args.net == 'resnet34':
-    #     net = resnet34(num_classes=nclass)
-    # elif args.net == 'resnet50':
-    #     net = resnet50(num_classes=nclass)
-    # elif args.net == 'resnet101':
-    #     net = resnet101(num_classes=nclass)
-    # elif args.net == 'resnet152':
-    #     net = resnet152(num_classes=nclass)
+    elif args.net == 'resnet18':
+        net = resnet18(num_classes=nclass)
+    elif args.net == 'resnet34':
+        net = resnet34(num_classes=nclass)
+    elif args.net == 'resnet50':
+        net = resnet50(num_classes=nclass)
+    elif args.net == 'resnet101':
+        net = resnet101(num_classes=nclass)
+    elif args.net == 'resnet152':
+        net = resnet152(num_classes=nclass)
 
     else:
         print('the network name you have entered is not supported yet')
@@ -164,3 +170,52 @@ class WarmUpLR(_LRScheduler):
         rate to base_lr * m / total_iters
         """
         return [base_lr * self.last_epoch / (self.total_iters + 1e-8) for base_lr in self.base_lrs]
+
+
+
+def get_training_dataloader_mnist(batch_size=16, num_workers=2, shuffle=True,alpha=0.0,task='mnist'):
+    """ return training dataloader
+    Args:
+        mean: mean of cifar100 training dataset
+        std: std of cifar100 training dataset
+        path: path to cifar100 training python dataset
+        batch_size: dataloader batchsize
+        num_workers: dataloader num_works
+        shuffle: whether to shuffle
+    Returns: train_data_loader:torch dataloader object
+    """
+
+    transform_train = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    mnist_training = datasets.MNIST('./data', train=True, download=True, transform=transform_train)
+
+    mnist_training_loader = DataLoader(mnist_training, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size, drop_last=False)
+
+    return mnist_training_loader
+
+
+def get_test_dataloader_mnist(batch_size=16, num_workers=2, shuffle=True,task="mnist",train=False):
+    """ return training dataloader
+    Args:
+        mean: mean of cifar100 training dataset
+        std: std of cifar100 training dataset
+        path: path to cifar100 training python dataset
+        batch_size: dataloader batchsize
+        num_workers: dataloader num_works
+        shuffle: whether to shuffle
+    Returns: train_data_loader:torch dataloader object
+    """
+
+    transform_train = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    mnist_training = datasets.MNIST('./data', train=train, download=True, transform=transform_train)
+
+    mnist_training_loader = DataLoader(mnist_training, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size, drop_last=False)
+
+    return mnist_training_loader
