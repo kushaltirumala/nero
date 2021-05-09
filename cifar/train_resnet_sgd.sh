@@ -17,6 +17,6 @@ do
   for width in 128
   do
     echo "ON DEPTH $depth and WIDTH $width \n"
-    env CUDA_VISIBLE_DEVICES=2 python train.py --gpu --batch_norm --task cifar10 --net resnet --depth $depth --width $width --optimizer sgd --momentum 0.0 --beta 0.999 --wd 0.0 --seed 0  --lr 0.01 --warm 0
+    env CUDA_VISIBLE_DEVICES=2 python train.py --gpu --batch_norm --task cifar10 --net resnet --depth $depth --width $width --optimizer sgd --momentum 0.0 --beta 0.999 --wd 0.0 --seed 0  --lr 0.001 --warm 0
   done
 done
