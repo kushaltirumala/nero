@@ -49,6 +49,8 @@ class Nero(Optimizer):
 
 
         for group in self.param_groups:
+            import pdb; pdb.set_trace()
+
             for p in group['params']:
                 if p.grad is None:
                     continue
@@ -115,6 +117,8 @@ class Nero_abl(Optimizer):
 
                 grad_normed = p.grad / (state['exp_avg_sq']/bias_correction).sqrt()
                 grad_normed[torch.isnan(grad_normed)] = 0
+
+
 
                 p.data -= group['lr'] * state['scale'] * grad_normed
 
