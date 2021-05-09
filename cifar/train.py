@@ -124,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', action='store_true', default=False, help='use gpu or not')
     parser.add_argument('--b', type=int, default=128, help='batch size for dataloader')
     parser.add_argument('--warm', type=int, default=5, help='warm up training phase')
-    parser.add_argument('--lr', type=float, default=0.1, help='initial learning rate')
+    parser.add_argument('--lr', type=float, default=0.01, help='initial learning rate')
     # Yang added:
     parser.add_argument('--momentum', default=0.0 , type=float,help='momentum/beta1')
     parser.add_argument('--beta', default=0.999, type=float,help='beta2')
@@ -141,6 +141,8 @@ if __name__ == '__main__':
     parser.add_argument('--depth', default=10, type=int)
     parser.add_argument('--width', default=10, type=int)
     parser.add_argument('--batch_norm', action='store_true', default=True, help="whether or not to include batch norm layers")
+    parser.add_argument('--gainlr', type=float, default=0.01, help='initial gain learning rate')
+
 
     args = parser.parse_args()
 
@@ -272,13 +274,13 @@ if __name__ == '__main__':
         checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.task, args.net,
                         args.prefix + args.optimizer + str(args.lr)+'_g_'+str(args.gamma)+
                         '_momentum_'+str(args.momentum)+'_wd_'+str(args.wd) +
-                        '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
+                        '_normallr_' +  str(args.lr) + '_gainlr_' + str(args.gainlr) + '_optchoice_' + str(args.optimizer),
                         settings.TIME_NOW)
     else:
         checkpoint_path = os.path.join(settings.CHECKPOINT_PATH, args.task, args.net,
                         args.prefix + args.optimizer + str(args.lr)+'_g_'+str(args.gamma)+
                         '_beta1_'+str(args.momentum)+'_beta2_'+str(args.beta)+'_wd_'+str(args.wd) +
-                        '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
+                        '_normallr_' +  str(args.lr) + '_gainlr_' + str(args.gainlr) + '_optchoice_' + str(args.optimizer),
                         settings.TIME_NOW)
 
     #use tensorboard
@@ -289,14 +291,14 @@ if __name__ == '__main__':
                             settings.LOG_DIR, args.task, args.net,
                             args.prefix + args.optimizer + str(args.lr)+'_g_'+str(args.gamma)+
                             '_momentum_'+str(args.momentum)+'_wd_'+str(args.wd) +
-                            '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
+                            '_normallr_' +  str(args.lr) + '_gainlr_' + str(args.gainlr) + '_optchoice_' + str(args.optimizer),
                             settings.TIME_NOW))
     else:
         writer = SummaryWriter(log_dir=os.path.join(
                             settings.LOG_DIR, args.task, args.net,
                             args.prefix + args.optimizer + str(args.lr)+'g'+str(args.gamma)+
                             '_beta1_'+str(args.momentum)+'_beta2_'+str(args.beta)+'_wd_'+str(args.wd) +
-                            '_depth_' + str(args.depth) + '_width_' + str(args.width) + '_optchoice_' + str(args.optimizer),
+                            '_normallr_' +  str(args.lr) + '_gainlr_' + str(args.gainlr) + '_optchoice_' + str(args.optimizer),
                             settings.TIME_NOW))
 
     if "cifar" in args.task:
