@@ -49,7 +49,6 @@ class Nero(Optimizer):
 
 
         for group in self.param_groups:
-            import pdb; pdb.set_trace()
 
             for p in group['params']:
                 if p.grad is None:
