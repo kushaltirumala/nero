@@ -282,11 +282,11 @@ if __name__ == '__main__':
     best_train_loss = 10.0
     best_train_loss_epoch = 0
 
-    # save epoch 0
-    torch.save({
-        'model_state_dict': net.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        }, checkpoint_path.format(net=args.net, epoch=0, type='regular', depth=args.depth, width=args.width, optchoice=args.optimizer))
+    # # save epoch 0
+    # torch.save({
+    #     'model_state_dict': net.state_dict(),
+    #     'optimizer_state_dict': optimizer.state_dict(),
+    #     }, checkpoint_path.format(net=args.net, epoch=0, type='regular', depth=args.depth, width=args.width, optchoice=args.optimizer))
 
     for epoch in range(1, settings.EPOCH):
         if epoch > args.warm:
