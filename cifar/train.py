@@ -69,6 +69,7 @@ def train(epoch):
             total_samples=len(cifar_training_loader.dataset)
         ))
 
+
         #update training loss for each iteration
         writer.add_scalar('Train/loss', loss.item(), n_iter)
 
@@ -340,11 +341,13 @@ if __name__ == '__main__':
         if epoch > args.warm:
             train_scheduler.step(epoch)
         writer.add_scalar("lr",optimizer.param_groups[0]['lr'],epoch)
+        writer.add_scalar("gainlr",optimizer.param_groups[1]['lr'],epoch)
 
         train(epoch)
 
         test_acc, test_loss = eval_training(dataloader=cifar_test_loader,train=False,epoch=epoch)
         train_acc, train_loss = eval_training(dataloader=cifar_training_loader,train=True,epoch=epoch)
+
         print(writer.log_dir)
 
         if test_acc > best_test_acc:
