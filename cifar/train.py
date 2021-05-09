@@ -223,7 +223,7 @@ if __name__ == '__main__':
     def is_gain_parameter(n): return 'bn' in n and 'weight' in n
 
     grouped_parameters = [
-        {"params": [p for n, p in params if is_gain_parameter(n)], 'lr': args.lr},
+        {"params": [p for n, p in params if is_gain_parameter(n)], 'lr': args.lr * 100},
         {"params": [p for n, p in params if not is_gain_parameter(n)], 'lr': args.lr},
     ]
 
