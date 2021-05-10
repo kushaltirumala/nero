@@ -12,7 +12,7 @@
 #   done
 # done
 
-for depth in 34 26
+for depth in 50 42 34 26 18 10
 do
   for width in 16 32 64 128 256
   do
