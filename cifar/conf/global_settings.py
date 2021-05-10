@@ -32,4 +32,4 @@ TIME_NOW = datetime.now().strftime('%A_%d_%B_%Y_%Hh_%Mm_%Ss')
 LOG_DIR = 'runs_bug_fixing'
 
 #save weights file per SAVE_EPOCH epoch
-SAVE_EPOCH = 1
+SAVE_EPOCH = 3
